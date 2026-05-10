@@ -4,8 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title></title>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1NFK0Q77EP"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1NFK0Q77EP');
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
         * { box-sizing: border-box; }
         body {
@@ -72,7 +83,7 @@
         table, th, td { border: 1px solid #222; }
         th, td { padding: 6px 8px; text-align: left; }
         th { background-color: #eaeaea; }
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], input[type="email"] {
             border: none;
             border-bottom: 1px dashed #666;
             background: transparent;
@@ -107,13 +118,43 @@
         }
         button:hover { background: #0e3a52; }
         button:active { transform: scale(0.98); }
-        .mensaje-estado {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 0.9em;
-            color: #2e7d32;
-            min-height: 20px;
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
         }
+        .modal-content {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 90%;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+        .modal-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a5276;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Documento final oculto */
         .documento-final {
             display: none;
             box-shadow: none;
@@ -125,9 +166,34 @@
             border: none;
             min-width: 0;
         }
+
+        /* Panel de administración oculto */
+        .admin-panel {
+            display: none;
+            background: #fff;
+            border: 2px solid #1a5276;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-top: 25px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .admin-panel button {
+            background: #b71c1c;
+            margin-top: 10px;
+        }
+        .admin-panel button:hover { background: #8e0000; }
     </style>
 </head>
 <body>
+
+<!-- MODAL -->
+<div id="modalEstado" class="modal-overlay">
+    <div class="modal-content">
+        <p id="mensajeEstado">Procesando...</p>
+        <div id="spinner" class="modal-spinner"></div>
+    </div>
+</div>
 
 <div class="contenedor" id="contenedor">
     <h2>Acuerdo Excepcional de Simultaneo de Vacaciones y Trabajo</h2>
@@ -138,13 +204,15 @@
     <div class="seccion">
         <h3>Partes</h3>
         <p><strong>EMPLEADOR:</strong> <input type="text" id="empleador" placeholder="nombre de la PYME">, con NIT: <input type="text" id="nit" size="12">, representada por <input type="text" id="rep_empleador" placeholder="nombre representante">, con CI No. <input type="text" id="ci_rep" size="12">.</p>
+        <p><strong>Correo del empleador:</strong> <input type="email" id="correo_empleador" placeholder="correo@empresa.com"></p>
         <p><strong>TRABAJADOR:</strong> <input type="text" id="nombre_trabajador" placeholder="nombre trabajador">, con CI No. <input type="text" id="ci_trabajador" size="12">, que ocupa el cargo de <input type="text" id="cargo" placeholder="cargo"> en el área de <input type="text" id="area" placeholder="área">.</p>
+        <p><strong>Correo del trabajador (opcional):</strong> <input type="email" id="correo_trabajador" placeholder="correo@ejemplo.com"></p>
     </div>
 
     <div class="seccion">
         <h3>Cláusulas</h3>
         <p><strong>PRIMERA: Circunstancia excepcional.</strong> Por necesidades impostergables del servicio derivadas de <input type="text" id="motivo" placeholder="motivo">, se requiere la permanencia del trabajador en su puesto, impidiendo el disfrute completo de sus vacaciones acumuladas.</p>
-        <p><strong>SEGUNDA: Vacaciones acumuladas.</strong> El trabajador tiene acumulados un total de <input type="text" id="dias_vacaciones" size="4"> (<input type="text" id="dias_letras" placeholder="en letras" size="18">) días de vacaciones, correspondientes al período de <input type="text" id="periodo_inicio" placeholder="inicio"> a <input type="text" id="periodo_fin" placeholder="fin">.</p>
+        <p><strong>SEGUNDA: Vacaciones acumuladas.</strong> El trabajador tiene acumulados un total de <input type="text" id="dias_vacaciones" size="4"> días de vacaciones, correspondientes al período de <input type="text" id="periodo_inicio" placeholder="inicio"> a <input type="text" id="periodo_fin" placeholder="fin">.</p>
         <p><strong>TERCERA: Condiciones económicas.</strong> Durante el mes de <input type="text" id="mes_pago" placeholder="mes"> de <input type="text" id="ano_pago" size="6" placeholder="año">, el trabajador percibirá de forma simultánea los siguientes conceptos:</p>
         <table>
             <tr><th>Concepto</th><th>Importe</th></tr>
@@ -173,11 +241,18 @@
 
     <div class="boton-guardar">
         <button onclick="generarPDF()">📄 Guardar PDF</button>
-        <div id="estado" class="mensaje-estado"></div>
+    </div>
+
+    <!-- PANEL DE ADMINISTRACIÓN (solo visible con ?admin=clave) -->
+    <div class="admin-panel" id="panelAdmin">
+        <h3>🔧 Panel de Administración</h3>
+        <p>Visitas totales (global): <strong id="contadorGlobal">0</strong></p>
+        <button onclick="reiniciarContadorGlobal()">🔄 Reiniciar contador</button>
+        <p id="mensajeReset"></p>
     </div>
 </div>
 
-<!-- Documento final oculto para generar PDF -->
+<!-- Documento final oculto -->
 <div class="documento-final" id="documentoFinal">
     <h2>Acuerdo Excepcional de Simultaneo de Vacaciones y Trabajo</h2>
     <p class="subtitulo">Amparado en la Ley No. 116 – Código de Trabajo de Cuba</p>
@@ -190,7 +265,7 @@
     <div class="seccion">
         <h3>Cláusulas</h3>
         <p><strong>PRIMERA: Circunstancia excepcional.</strong> Por necesidades impostergables del servicio derivadas de <span id="p_motivo" class="valor"></span>, se requiere la permanencia del trabajador en su puesto, impidiendo el disfrute completo de sus vacaciones acumuladas.</p>
-        <p><strong>SEGUNDA: Vacaciones acumuladas.</strong> El trabajador tiene acumulados un total de <span id="p_dias_vacaciones" class="valor"></span> (<span id="p_dias_letras" class="valor"></span>) días de vacaciones, correspondientes al período de <span id="p_periodo_inicio" class="valor"></span> a <span id="p_periodo_fin" class="valor"></span>.</p>
+        <p><strong>SEGUNDA: Vacaciones acumuladas.</strong> El trabajador tiene acumulados un total de <span id="p_dias_vacaciones" class="valor"></span> días de vacaciones, correspondientes al período de <span id="p_periodo_inicio" class="valor"></span> a <span id="p_periodo_fin" class="valor"></span>.</p>
         <p><strong>TERCERA: Condiciones económicas.</strong> Durante el mes de <span id="p_mes_pago" class="valor"></span> de <span id="p_ano_pago" class="valor"></span>, el trabajador percibirá de forma simultánea los siguientes conceptos:</p>
         <table>
             <tr><th>Concepto</th><th>Importe</th></tr>
@@ -218,17 +293,87 @@
 </div>
 
 <script>
-    // ⚠️ REEMPLAZA ESTA URL con la de tu propio Google Apps Script (la que copiaste antes)
+    // ⚠️ REEMPLAZA ESTA URL con la de tu Apps Script
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbywp49q2kGPJTA8i5J1H5QxmgGcKwocoCGtA9zkcfzOGG0Y3LFh65GdC3m2xLrD0_Oc/exec";
 
+    // ⚠️ CLAVE DE ADMINISTRADOR (cambiar por una segura)
+    const ADMIN_PASSWORD = "Admin8406";
+
+    // ====== PANEL DE ADMIN (contador global) ======
+    const urlParams = new URLSearchParams(window.location.search);
+    const esAdmin = urlParams.get('admin') === ADMIN_PASSWORD;
+
+    if (esAdmin) {
+        document.getElementById('panelAdmin').style.display = 'block';
+        actualizarContadorGlobal();
+    }
+
+    async function obtenerContadorGlobal() {
+        try {
+            const resp = await fetch(`${SCRIPT_URL}?action=visit`, { method: 'GET' });
+            const data = await resp.json();
+            return data.count;
+        } catch (e) {
+            console.error("Error al obtener contador", e);
+            return null;
+        }
+    }
+
+    async function actualizarContadorGlobal() {
+        const count = await obtenerContadorGlobal();
+        if (count !== null) {
+            document.getElementById('contadorGlobal').textContent = count;
+        } else {
+            document.getElementById('contadorGlobal').textContent = "Error";
+        }
+    }
+
+    async function reiniciarContadorGlobal() {
+        const token = prompt("Token de reinicio:");
+        if (!token) return;
+        try {
+            const resp = await fetch(`${SCRIPT_URL}?action=reset&token=${encodeURIComponent(token)}`, { method: 'GET' });
+            const data = await resp.json();
+            if (data.count !== undefined) {
+                document.getElementById('contadorGlobal').textContent = data.count;
+                document.getElementById('mensajeReset').textContent = "✅ Contador reiniciado a 0.";
+            } else {
+                document.getElementById('mensajeReset').textContent = "❌ Token inválido.";
+            }
+        } catch (e) {
+            document.getElementById('mensajeReset').textContent = "❌ Error de red.";
+        }
+    }
+
+    // También incrementar contador global para todos los visitantes (llamada al cargar)
+    (async function() {
+        try {
+            await fetch(`${SCRIPT_URL}?action=visit`, { method: 'GET' });
+        } catch(e) {}
+    })();
+
+    // ====== MODAL ======
+    const modal = document.getElementById('modalEstado');
+    const mensajeEstado = document.getElementById('mensajeEstado');
+    const spinner = document.getElementById('spinner');
+
+    function mostrarModal(mensaje, conSpinner = true) {
+        mensajeEstado.textContent = mensaje;
+        spinner.style.display = conSpinner ? 'block' : 'none';
+        modal.style.display = 'flex';
+    }
+
+    function ocultarModal() {
+        modal.style.display = 'none';
+    }
+
+    // ====== FORMULARIO Y PDF ======
     function calcularTotal() {
         const vac = parseFloat(document.getElementById('pago_vacaciones').value) || 0;
         const sal = parseFloat(document.getElementById('salario_mensual').value) || 0;
-        const total = vac + sal;
-        document.getElementById('total_recibir').value = total.toFixed(2);
+        document.getElementById('total_recibir').value = (vac + sal).toFixed(2);
     }
 
-    // Autocompletar nombres en las firmas
     document.getElementById('rep_empleador').addEventListener('input', function() {
         document.getElementById('firma_empleador_nombre').value = this.value;
     });
@@ -236,134 +381,132 @@
         document.getElementById('firma_trabajador_nombre').value = this.value;
     });
 
-    async function generarPDF() {
-        const estado = document.getElementById('estado');
-        estado.textContent = "Generando PDF...";
-
-        // Copiar valores al documento oculto
-        const mapeo = [
-            ['ciudad', 'p_ciudad'], ['dia', 'p_dia'], ['mes', 'p_mes'], ['ano', 'p_ano'],
-            ['empleador', 'p_empleador'], ['nit', 'p_nit'], ['rep_empleador', 'p_rep_empleador'],
-            ['ci_rep', 'p_ci_rep'], ['nombre_trabajador', 'p_nombre_trabajador'],
-            ['ci_trabajador', 'p_ci_trabajador'], ['cargo', 'p_cargo'], ['area', 'p_area'],
-            ['motivo', 'p_motivo'], ['dias_vacaciones', 'p_dias_vacaciones'],
-            ['dias_letras', 'p_dias_letras'], ['periodo_inicio', 'p_periodo_inicio'],
-            ['periodo_fin', 'p_periodo_fin'], ['mes_pago', 'p_mes_pago'], ['ano_pago', 'p_ano_pago'],
-            ['pago_vacaciones', 'p_pago_vacaciones'], ['salario_mensual', 'p_salario_mensual'],
-            ['total_recibir', 'p_total_recibir'], ['descanso_dia_inicio', 'p_descanso_dia_inicio'],
-            ['descanso_mes_inicio', 'p_descanso_mes_inicio'], ['descanso_dia_fin', 'p_descanso_dia_fin'],
-            ['descanso_mes_fin', 'p_descanso_mes_fin'], ['descanso_ano', 'p_descanso_ano'],
-            ['firma_empleador_nombre', 'p_firma_empleador_nombre'],
-            ['firma_empleador_firma', 'p_firma_empleador_firma'],
-            ['firma_empleador_fecha', 'p_firma_empleador_fecha'],
-            ['firma_trabajador_nombre', 'p_firma_trabajador_nombre'],
-            ['firma_trabajador_firma', 'p_firma_trabajador_firma'],
-            ['firma_trabajador_fecha', 'p_firma_trabajador_fecha']
+    function limpiarFormulario() {
+        const ids = [
+            'ciudad','dia','mes','ano','empleador','nit','rep_empleador','ci_rep',
+            'correo_empleador','nombre_trabajador','ci_trabajador','cargo','area',
+            'correo_trabajador','motivo','dias_vacaciones','periodo_inicio','periodo_fin',
+            'mes_pago','ano_pago','pago_vacaciones','salario_mensual','total_recibir',
+            'descanso_dia_inicio','descanso_mes_inicio','descanso_dia_fin','descanso_mes_fin',
+            'descanso_ano','firma_empleador_nombre','firma_empleador_firma','firma_empleador_fecha',
+            'firma_trabajador_nombre','firma_trabajador_firma','firma_trabajador_fecha'
         ];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+    }
 
+    async function generarPDF() {
+        mostrarModal('Generando PDF...', true);
+        // Copiar datos al documento final
+        const mapeo = [
+            ['ciudad','p_ciudad'],['dia','p_dia'],['mes','p_mes'],['ano','p_ano'],
+            ['empleador','p_empleador'],['nit','p_nit'],['rep_empleador','p_rep_empleador'],
+            ['ci_rep','p_ci_rep'],['nombre_trabajador','p_nombre_trabajador'],
+            ['ci_trabajador','p_ci_trabajador'],['cargo','p_cargo'],['area','p_area'],
+            ['motivo','p_motivo'],['dias_vacaciones','p_dias_vacaciones'],
+            ['periodo_inicio','p_periodo_inicio'],['periodo_fin','p_periodo_fin'],
+            ['mes_pago','p_mes_pago'],['ano_pago','p_ano_pago'],
+            ['pago_vacaciones','p_pago_vacaciones'],['salario_mensual','p_salario_mensual'],
+            ['total_recibir','p_total_recibir'],['descanso_dia_inicio','p_descanso_dia_inicio'],
+            ['descanso_mes_inicio','p_descanso_mes_inicio'],['descanso_dia_fin','p_descanso_dia_fin'],
+            ['descanso_mes_fin','p_descanso_mes_fin'],['descanso_ano','p_descanso_ano'],
+            ['firma_empleador_nombre','p_firma_empleador_nombre'],
+            ['firma_empleador_firma','p_firma_empleador_firma'],
+            ['firma_empleador_fecha','p_firma_empleador_fecha'],
+            ['firma_trabajador_nombre','p_firma_trabajador_nombre'],
+            ['firma_trabajador_firma','p_firma_trabajador_firma'],
+            ['firma_trabajador_fecha','p_firma_trabajador_fecha']
+        ];
         for (const [idInput, idSpan] of mapeo) {
             const input = document.getElementById(idInput);
             const span = document.getElementById(idSpan);
-            if (input && span) {
-                span.textContent = input.value.trim() !== '' ? input.value.trim() : '__________';
-            }
+            if (input && span) span.textContent = input.value.trim() !== '' ? input.value.trim() : '__________';
         }
-
         calcularTotal();
-        const totalInput = document.getElementById('total_recibir');
-        const totalSpan = document.getElementById('p_total_recibir');
-        if (totalInput && totalSpan) totalSpan.textContent = totalInput.value || '0.00';
+        document.getElementById('p_total_recibir').textContent = document.getElementById('total_recibir').value || '0.00';
 
-        const documentoFinal = document.getElementById('documentoFinal');
+        const docFinal = document.getElementById('documentoFinal');
         const boton = document.querySelector('.boton-guardar');
-        
-        // Estilos compactos para que quepa en una sola hoja carta
-        const estilosOriginales = {
-            padding: documentoFinal.style.padding,
-            fontSize: documentoFinal.style.fontSize,
-            lineHeight: documentoFinal.style.lineHeight
-        };
-        documentoFinal.style.padding = '0.5cm 0.8cm';
-        documentoFinal.style.fontSize = '11pt';
-        documentoFinal.style.lineHeight = '1.35';
-
-        documentoFinal.style.display = 'block';
+        docFinal.style.padding = '0.5cm 0.8cm';
+        docFinal.style.fontSize = '11pt';
+        docFinal.style.lineHeight = '1.35';
+        docFinal.style.display = 'block';
         boton.style.display = 'none';
 
         try {
-            const canvas = await html2canvas(documentoFinal, { scale: 2, useCORS: true, logging: false });
+            const canvas = await html2canvas(docFinal, { scale: 2, useCORS: true, logging: false });
             const imgData = canvas.toDataURL('image/png');
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'letter' });
-
             const margen = 10;
-            const anchoMax = pdf.internal.pageSize.getWidth() - margen * 2;
-            const altoMax = pdf.internal.pageSize.getHeight() - margen * 2;
-
-            const imgWidth = canvas.width;
-            const imgHeight = canvas.height;
-            const aspect = imgWidth / imgHeight;
-
+            const anchoMax = pdf.internal.pageSize.getWidth() - margen*2;
+            const altoMax = pdf.internal.pageSize.getHeight() - margen*2;
             let finalWidth = anchoMax;
-            let finalHeight = finalWidth / aspect;
+            let finalHeight = (canvas.height * finalWidth) / canvas.width;
             if (finalHeight > altoMax) {
                 finalHeight = altoMax;
-                finalWidth = finalHeight * aspect;
+                finalWidth = (canvas.width * finalHeight) / canvas.height;
             }
-            const offsetX = margen + (anchoMax - finalWidth) / 2;
-            const offsetY = margen + (altoMax - finalHeight) / 2;
+            const offsetX = margen + (anchoMax - finalWidth)/2;
+            const offsetY = margen + (altoMax - finalHeight)/2;
             pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
 
-            // Nombre del archivo incluyendo PYME y trabajador
             const empleador = document.getElementById('empleador').value.trim();
             const trabajador = document.getElementById('nombre_trabajador').value.trim();
             const nombreArchivo = (empleador && trabajador)
-                ? `Acuerdo_Vacaciones_${empleador.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_')}_${trabajador.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_')}.pdf`
+                ? `Acuerdo_Vacaciones_${empleador.replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_')}_${trabajador.replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_')}.pdf`
                 : `Acuerdo_Vacaciones_${trabajador || empleador || 'SinDatos'}.pdf`;
 
             pdf.save(nombreArchivo);
-
-            estado.textContent = "Enviando copia...";
+            mostrarModal('Enviando copia...', true);
             const blobPDF = pdf.output('blob');
             const reader = new FileReader();
             reader.readAsDataURL(blobPDF);
             reader.onloadend = async () => {
-                const base64data = reader.result.split(',')[1];
+                const base64 = reader.result.split(',')[1];
+                const correoEmpleador = document.getElementById('correo_empleador').value.trim();
+                const correoTrabajador = document.getElementById('correo_trabajador').value.trim();
                 const fecha = `${document.getElementById('dia').value}/${document.getElementById('mes').value}/${document.getElementById('ano').value}`;
-
                 try {
-                    const response = await fetch(SCRIPT_URL, {
+                    const resp = await fetch(SCRIPT_URL, {
                         method: 'POST',
                         body: JSON.stringify({
-                            archivo: base64data,
+                            archivo: base64,
                             nombre: nombreArchivo,
                             metadata: {
-                                trabajador: trabajador,
-                                empleador: empleador,
-                                fecha: fecha
+                                trabajador, empleador, fecha,
+                                correoEmpleador, correoTrabajador
                             }
                         })
                     });
-                    const resultado = await response.json();
-                    if (resultado.status === "ok") {
-                        estado.textContent = "✅ PDF descargado y copia enviada a la administración.";
+                    const json = await resp.json();
+                    if (json.status === "ok") {
+                        mostrarModal('✅ PDF descargado y copia enviada.', false);
+                        limpiarFormulario();
                     } else {
-                        estado.textContent = "⚠️ PDF descargado, pero falló el envío de la copia.";
+                        mostrarModal('⚠️ PDF descargado, pero falló el envío.', false);
                     }
-                } catch (e) {
-                    estado.textContent = "⚠️ PDF descargado, no se pudo enviar copia (error de red).";
+                } catch(e) {
+                    mostrarModal('⚠️ PDF descargado, no se pudo enviar copia.', false);
+                } finally {
+                    setTimeout(ocultarModal, 2500);
                 }
             };
-        } catch (error) {
-            estado.textContent = "❌ Error al generar el PDF.";
+        } catch(error) {
+            console.error(error);
+            mostrarModal('❌ Error al generar el PDF.', false);
+            setTimeout(ocultarModal, 2500);
         } finally {
-            documentoFinal.style.padding = estilosOriginales.padding || '';
-            documentoFinal.style.fontSize = estilosOriginales.fontSize || '';
-            documentoFinal.style.lineHeight = estilosOriginales.lineHeight || '';
-            documentoFinal.style.display = 'none';
+            docFinal.style.padding = '';
+            docFinal.style.fontSize = '';
+            docFinal.style.lineHeight = '';
+            docFinal.style.display = 'none';
             boton.style.display = 'block';
         }
     }
 </script>
+
 </body>
 </html>
