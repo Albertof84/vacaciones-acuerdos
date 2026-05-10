@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .contenedor, .documento-final {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            padding: 25px 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-radius: 4px;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.5;
+            text-align: justify;
+        }
+        @media (min-width: 600px) {
+            .contenedor, .documento-final {
+                padding: 35px 45px;
+                font-size: 12pt;
+            }
+        }
+        h2 {
+            text-align: center;
+            font-size: 1.3em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .subtitulo {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 25px;
+            font-size: 1em;
+        }
+        .datos {
+            text-align: left;
+            white-space: nowrap;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+        .seccion h3 {
+            font-size: 1.05em;
+            text-transform: uppercase;
+            border-bottom: 1px solid #333;
+            display: inline-block;
+            margin: 20px 0 10px 0;
+        }
+        .seccion p { margin: 8px 0; }
+        table {
+            width: 100%;
+            max-width: 400px;
+            margin: 10px auto;
+            border-collapse: collapse;
+            font-size: 0.95em;
+        }
+        table, th, td { border: 1px solid #222; }
+        th, td { padding: 6px 8px; text-align: left; }
+        th { background-color: #eaeaea; }
+        input[type="text"], input[type="number"] {
+            border: none;
+            border-bottom: 1px dashed #666;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            padding: 2px 3px;
+            margin: 0 2px;
+            max-width: 100%;
+        }
+        input:focus { outline: none; border-bottom: 1px solid #1a5276; background: #fafafa; }
+        .firma {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 40px;
+            text-align: center;
+        }
+        .firma div { width: 48%; margin-bottom: 20px; }
+        @media (max-width: 500px) { .firma div { width: 100%; } }
+        .firma input { min-width: 120px; margin-top: 20px; }
+        .boton-guardar { text-align: center; margin: 30px 0 10px 0; }
+        button {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            background: #1a5276;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover { background: #0e3a52; }
+        button:active { transform: scale(0.98); }
+        .mensaje-estado {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #2e7d32;
+            min-height: 20px;
+        }
+        .documento-final {
+            display: none;
+            box-shadow: none;
+            margin: 0 auto;
+        }
+        .documento-final .valor {
+            display: inline;
+            margin: 0 2px;
+            border: none;
+            min-width: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="contenedor" id="contenedor">
+    <h2>Acuerdo Excepcional de Simultaneo de Vacaciones y Trabajo</h2>
+    <p class="subtitulo">Amparado en la Ley No. 116 – Código de Trabajo de Cuba</p>
+
+    <p class="datos">En <input type="text" id="ciudad" placeholder="ciudad">, a los <input type="text" id="dia" size="3" placeholder="día"> días del mes de <input type="text" id="mes" placeholder="mes"> de <input type="text" id="ano" size="6" placeholder="año">.</p>
+
+    <div class="seccion">
+        <h3>Partes</h3>
+        <p><strong>EMPLEADOR:</strong> <input type="text" id="empleador" placeholder="nombre de la PYME">, con NIT: <input type="text" id="nit" size="12">, representada por <input type="text" id="rep_empleador" placeholder="nombre representante">, con CI No. <input type="text" id="ci_rep" size="12">.</p>
+        <p><strong>TRABAJADOR:</strong> <input type="text" id="nombre_trabajador" placeholder="nombre trabajador">, con CI No. <input type="text" id="ci_trabajador" size="12">, que ocupa el cargo de <input type="text" id="cargo" placeholder="cargo"> en el área de <input type="text" id="area" placeholder="área">.</p>
+    </div>
+
+    <div class="seccion">
+        <h3>Cláusulas</h3>
+        <p><strong>PRIMERA: Circunstancia excepcional.</strong> Por necesidades impostergables del servicio derivadas de <input type="text" id="motivo" placeholder="motivo">, se requiere la permanencia del trabajador en su puesto, impidiendo el disfrute completo de sus vacaciones acumuladas.</p>
+        <p><strong>SEGUNDA: Vacaciones acumuladas.</strong> El trabajador tiene acumulados un total de <input type="text" id="dias_vacaciones" size="4"> (<input type="text" id="dias_letras" placeholder="en letras" size="18">) días de vacaciones, correspondientes al período de <input type="text" id="periodo_inicio" placeholder="inicio"> a <input type="text" id="periodo_fin" placeholder="fin">.</p>
+        <p><strong>TERCERA: Condiciones económicas.</strong> Durante el mes de <input type="text" id="mes_pago" placeholder="mes"> de <input type="text" id="ano_pago" size="6" placeholder="año">, el trabajador percibirá de forma simultánea los siguientes conceptos:</p>
+        <table>
+            <tr><th>Concepto</th><th>Importe</th></tr>
+            <tr><td>Pago íntegro de las vacaciones acumuladas</td><td>$ <input type="number" id="pago_vacaciones" placeholder="0.00" step="0.01" style="width:100px;" oninput="calcularTotal()"></td></tr>
+            <tr><td>Salario mensual por el trabajo realizado</td><td>$ <input type="number" id="salario_mensual" placeholder="0.00" step="0.01" style="width:100px;" oninput="calcularTotal()"></td></tr>
+            <tr><th>Total a recibir en el mes</th><th>$ <input type="text" id="total_recibir" placeholder="0.00" readonly style="font-weight:bold; background:#f7f7f7; width:100px;"></th></tr>
+        </table>
+        <p><strong>CUARTA: Descanso mínimo obligatorio.</strong> El empleador se compromete a garantizar un descanso efectivo de <strong>7 días naturales</strong>, desde el <input type="text" id="descanso_dia_inicio" size="4" placeholder="dd"> de <input type="text" id="descanso_mes_inicio" placeholder="mes"> hasta el <input type="text" id="descanso_dia_fin" size="4" placeholder="dd"> de <input type="text" id="descanso_mes_fin" placeholder="mes"> de <input type="text" id="descanso_ano" size="6" placeholder="año">.</p>
+        <p><strong>QUINTA: Constancia y validez.</strong> Ambas partes manifiestan su plena conformidad. La firma acredita el mutuo acuerdo y sustituye la consulta sindical ante su inexistencia en la entidad.</p>
+    </div>
+
+    <div class="firma">
+        <div>
+            <p><strong>Por el Empleador</strong></p>
+            <p>Nombre: <input type="text" id="firma_empleador_nombre" placeholder="nombre"></p>
+            <p>Firma: <input type="text" id="firma_empleador_firma" placeholder=""></p>
+            <p>Fecha: <input type="text" id="firma_empleador_fecha" size="10" placeholder="dd/mm/aa"></p>
+        </div>
+        <div>
+            <p><strong>Por el Trabajador</strong></p>
+            <p>Nombre: <input type="text" id="firma_trabajador_nombre" placeholder="nombre"></p>
+            <p>Firma: <input type="text" id="firma_trabajador_firma" placeholder=""></p>
+            <p>Fecha: <input type="text" id="firma_trabajador_fecha" size="10" placeholder="dd/mm/aa"></p>
+        </div>
+    </div>
+
+    <div class="boton-guardar">
+        <button onclick="generarPDF()">📄 Guardar PDF</button>
+        <div id="estado" class="mensaje-estado"></div>
+    </div>
+</div>
+
+<!-- Documento final oculto para generar PDF -->
+<div class="documento-final" id="documentoFinal">
+    <h2>Acuerdo Excepcional de Simultaneo de Vacaciones y Trabajo</h2>
+    <p class="subtitulo">Amparado en la Ley No. 116 – Código de Trabajo de Cuba</p>
+    <p class="datos">En <span id="p_ciudad" class="valor"></span>, a los <span id="p_dia" class="valor"></span> días del mes de <span id="p_mes" class="valor"></span> de <span id="p_ano" class="valor"></span>.</p>
+    <div class="seccion">
+        <h3>Partes</h3>
+        <p><strong>EMPLEADOR:</strong> <span id="p_empleador" class="valor"></span>, con NIT: <span id="p_nit" class="valor"></span>, representada por <span id="p_rep_empleador" class="valor"></span>, con CI No. <span id="p_ci_rep" class="valor"></span>.</p>
+        <p><strong>TRABAJADOR:</strong> <span id="p_nombre_trabajador" class="valor"></span>, con CI No. <span id="p_ci_trabajador" class="valor"></span>, que ocupa el cargo de <span id="p_cargo" class="valor"></span> en el área de <span id="p_area" class="valor"></span>.</p>
+    </div>
+    <div class="seccion">
+        <h3>Cláusulas</h3>
+        <p><strong>PRIMERA: Circunstancia excepcional.</strong> Por necesidades impostergables del servicio derivadas de <span id="p_motivo" class="valor"></span>, se requiere la permanencia del trabajador en su puesto, impidiendo el disfrute completo de sus vacaciones acumuladas.</p>
+        <p><strong>SEGUNDA: Vacaciones acumuladas.</strong> El trabajador tiene acumulados un total de <span id="p_dias_vacaciones" class="valor"></span> (<span id="p_dias_letras" class="valor"></span>) días de vacaciones, correspondientes al período de <span id="p_periodo_inicio" class="valor"></span> a <span id="p_periodo_fin" class="valor"></span>.</p>
+        <p><strong>TERCERA: Condiciones económicas.</strong> Durante el mes de <span id="p_mes_pago" class="valor"></span> de <span id="p_ano_pago" class="valor"></span>, el trabajador percibirá de forma simultánea los siguientes conceptos:</p>
+        <table>
+            <tr><th>Concepto</th><th>Importe</th></tr>
+            <tr><td>Pago íntegro de las vacaciones acumuladas</td><td>$ <span id="p_pago_vacaciones" class="valor"></span></td></tr>
+            <tr><td>Salario mensual por el trabajo realizado</td><td>$ <span id="p_salario_mensual" class="valor"></span></td></tr>
+            <tr><th>Total a recibir en el mes</th><th>$ <span id="p_total_recibir" class="valor"></span></th></tr>
+        </table>
+        <p><strong>CUARTA: Descanso mínimo obligatorio.</strong> El empleador se compromete a garantizar un descanso efectivo de <strong>7 días naturales</strong>, desde el <span id="p_descanso_dia_inicio" class="valor"></span> de <span id="p_descanso_mes_inicio" class="valor"></span> hasta el <span id="p_descanso_dia_fin" class="valor"></span> de <span id="p_descanso_mes_fin" class="valor"></span> de <span id="p_descanso_ano" class="valor"></span>.</p>
+        <p><strong>QUINTA: Constancia y validez.</strong> Ambas partes manifiestan su plena conformidad. La firma acredita el mutuo acuerdo y sustituye la consulta sindical ante su inexistencia en la entidad.</p>
+    </div>
+    <div class="firma">
+        <div>
+            <p><strong>Por el Empleador</strong></p>
+            <p>Nombre: <span id="p_firma_empleador_nombre" class="valor"></span></p>
+            <p>Firma: <span id="p_firma_empleador_firma" class="valor"></span></p>
+            <p>Fecha: <span id="p_firma_empleador_fecha" class="valor"></span></p>
+        </div>
+        <div>
+            <p><strong>Por el Trabajador</strong></p>
+            <p>Nombre: <span id="p_firma_trabajador_nombre" class="valor"></span></p>
+            <p>Firma: <span id="p_firma_trabajador_firma" class="valor"></span></p>
+            <p>Fecha: <span id="p_firma_trabajador_fecha" class="valor"></span></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ⚠️ REEMPLAZA ESTA URL con la de tu propio Google Apps Script (la que copiaste antes)
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbywp49q2kGPJTA8i5J1H5QxmgGcKwocoCGtA9zkcfzOGG0Y3LFh65GdC3m2xLrD0_Oc/exec";
+
+    function calcularTotal() {
+        const vac = parseFloat(document.getElementById('pago_vacaciones').value) || 0;
+        const sal = parseFloat(document.getElementById('salario_mensual').value) || 0;
+        const total = vac + sal;
+        document.getElementById('total_recibir').value = total.toFixed(2);
+    }
+
+    // Autocompletar nombres en las firmas
+    document.getElementById('rep_empleador').addEventListener('input', function() {
+        document.getElementById('firma_empleador_nombre').value = this.value;
+    });
+    document.getElementById('nombre_trabajador').addEventListener('input', function() {
+        document.getElementById('firma_trabajador_nombre').value = this.value;
+    });
+
+    async function generarPDF() {
+        const estado = document.getElementById('estado');
+        estado.textContent = "Generando PDF...";
+
+        // Copiar valores al documento oculto
+        const mapeo = [
+            ['ciudad', 'p_ciudad'], ['dia', 'p_dia'], ['mes', 'p_mes'], ['ano', 'p_ano'],
+            ['empleador', 'p_empleador'], ['nit', 'p_nit'], ['rep_empleador', 'p_rep_empleador'],
+            ['ci_rep', 'p_ci_rep'], ['nombre_trabajador', 'p_nombre_trabajador'],
+            ['ci_trabajador', 'p_ci_trabajador'], ['cargo', 'p_cargo'], ['area', 'p_area'],
+            ['motivo', 'p_motivo'], ['dias_vacaciones', 'p_dias_vacaciones'],
+            ['dias_letras', 'p_dias_letras'], ['periodo_inicio', 'p_periodo_inicio'],
+            ['periodo_fin', 'p_periodo_fin'], ['mes_pago', 'p_mes_pago'], ['ano_pago', 'p_ano_pago'],
+            ['pago_vacaciones', 'p_pago_vacaciones'], ['salario_mensual', 'p_salario_mensual'],
+            ['total_recibir', 'p_total_recibir'], ['descanso_dia_inicio', 'p_descanso_dia_inicio'],
+            ['descanso_mes_inicio', 'p_descanso_mes_inicio'], ['descanso_dia_fin', 'p_descanso_dia_fin'],
+            ['descanso_mes_fin', 'p_descanso_mes_fin'], ['descanso_ano', 'p_descanso_ano'],
+            ['firma_empleador_nombre', 'p_firma_empleador_nombre'],
+            ['firma_empleador_firma', 'p_firma_empleador_firma'],
+            ['firma_empleador_fecha', 'p_firma_empleador_fecha'],
+            ['firma_trabajador_nombre', 'p_firma_trabajador_nombre'],
+            ['firma_trabajador_firma', 'p_firma_trabajador_firma'],
+            ['firma_trabajador_fecha', 'p_firma_trabajador_fecha']
+        ];
+
+        for (const [idInput, idSpan] of mapeo) {
+            const input = document.getElementById(idInput);
+            const span = document.getElementById(idSpan);
+            if (input && span) {
+                span.textContent = input.value.trim() !== '' ? input.value.trim() : '__________';
+            }
+        }
+
+        calcularTotal();
+        const totalInput = document.getElementById('total_recibir');
+        const totalSpan = document.getElementById('p_total_recibir');
+        if (totalInput && totalSpan) totalSpan.textContent = totalInput.value || '0.00';
+
+        const documentoFinal = document.getElementById('documentoFinal');
+        const boton = document.querySelector('.boton-guardar');
+        
+        // Estilos compactos para que quepa en una sola hoja carta
+        const estilosOriginales = {
+            padding: documentoFinal.style.padding,
+            fontSize: documentoFinal.style.fontSize,
+            lineHeight: documentoFinal.style.lineHeight
+        };
+        documentoFinal.style.padding = '0.5cm 0.8cm';
+        documentoFinal.style.fontSize = '11pt';
+        documentoFinal.style.lineHeight = '1.35';
+
+        documentoFinal.style.display = 'block';
+        boton.style.display = 'none';
+
+        try {
+            const canvas = await html2canvas(documentoFinal, { scale: 2, useCORS: true, logging: false });
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'letter' });
+
+            const margen = 10;
+            const anchoMax = pdf.internal.pageSize.getWidth() - margen * 2;
+            const altoMax = pdf.internal.pageSize.getHeight() - margen * 2;
+
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const aspect = imgWidth / imgHeight;
+
+            let finalWidth = anchoMax;
+            let finalHeight = finalWidth / aspect;
+            if (finalHeight > altoMax) {
+                finalHeight = altoMax;
+                finalWidth = finalHeight * aspect;
+            }
+            const offsetX = margen + (anchoMax - finalWidth) / 2;
+            const offsetY = margen + (altoMax - finalHeight) / 2;
+            pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
+
+            // Nombre del archivo incluyendo PYME y trabajador
+            const empleador = document.getElementById('empleador').value.trim();
+            const trabajador = document.getElementById('nombre_trabajador').value.trim();
+            const nombreArchivo = (empleador && trabajador)
+                ? `Acuerdo_Vacaciones_${empleador.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_')}_${trabajador.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_')}.pdf`
+                : `Acuerdo_Vacaciones_${trabajador || empleador || 'SinDatos'}.pdf`;
+
+            pdf.save(nombreArchivo);
+
+            estado.textContent = "Enviando copia...";
+            const blobPDF = pdf.output('blob');
+            const reader = new FileReader();
+            reader.readAsDataURL(blobPDF);
+            reader.onloadend = async () => {
+                const base64data = reader.result.split(',')[1];
+                const fecha = `${document.getElementById('dia').value}/${document.getElementById('mes').value}/${document.getElementById('ano').value}`;
+
+                try {
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            archivo: base64data,
+                            nombre: nombreArchivo,
+                            metadata: {
+                                trabajador: trabajador,
+                                empleador: empleador,
+                                fecha: fecha
+                            }
+                        })
+                    });
+                    const resultado = await response.json();
+                    if (resultado.status === "ok") {
+                        estado.textContent = "✅ PDF descargado y copia enviada a la administración.";
+                    } else {
+                        estado.textContent = "⚠️ PDF descargado, pero falló el envío de la copia.";
+                    }
+                } catch (e) {
+                    estado.textContent = "⚠️ PDF descargado, no se pudo enviar copia (error de red).";
+                }
+            };
+        } catch (error) {
+            estado.textContent = "❌ Error al generar el PDF.";
+        } finally {
+            documentoFinal.style.padding = estilosOriginales.padding || '';
+            documentoFinal.style.fontSize = estilosOriginales.fontSize || '';
+            documentoFinal.style.lineHeight = estilosOriginales.lineHeight || '';
+            documentoFinal.style.display = 'none';
+            boton.style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>
