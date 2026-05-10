@@ -183,6 +183,44 @@
             margin-top: 10px;
         }
         .admin-panel button:hover { background: #8e0000; }
+
+        /* Toast de notificación */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a5276;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 2000;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+        }
+        .toast.mostrar {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast .spinner-toast {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        .toast.activo .spinner-toast {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -193,6 +231,12 @@
         <p id="mensajeEstado">Procesando...</p>
         <div id="spinner" class="modal-spinner"></div>
     </div>
+</div>
+
+<!-- TOAST DE ENVÍO -->
+<div id="toastEnvio" class="toast">
+    <div class="spinner-toast"></div>
+    <span id="textoToast">Enviando copia...</span>
 </div>
 
 <div class="contenedor" id="contenedor">
@@ -243,7 +287,7 @@
         <button onclick="generarPDF()">📄 Guardar PDF</button>
     </div>
 
-    <!-- PANEL DE ADMINISTRACIÓN (solo visible con ?admin=clave) -->
+    <!-- PANEL DE ADMINISTRACIÓN -->
     <div class="admin-panel" id="panelAdmin">
         <h3>🔧 Panel de Administración</h3>
         <p>Visitas totales (global): <strong id="contadorGlobal">0</strong></p>
@@ -293,13 +337,13 @@
 </div>
 
 <script>
-    // ⚠️ REEMPLAZA ESTA URL con la de tu Apps Script
+    // ⚠️ SCRIPT ACTUALIZADO
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgi9Z_Eus4odGdOH01kaxrqpJfkxGCmR5xrNUaYvMJcRq91j86NQZjDNDuCUMZcJkF/exec";
 
     // ⚠️ CLAVE DE ADMINISTRADOR
     const ADMIN_PASSWORD = "Admin8406";
 
-    // ====== PANEL DE ADMIN (contador global) ======
+    // ====== PANEL DE ADMIN ======
     const urlParams = new URLSearchParams(window.location.search);
     const esAdmin = urlParams.get('admin') === ADMIN_PASSWORD;
     if (esAdmin) {
@@ -320,11 +364,7 @@
 
     async function actualizarContadorGlobal() {
         const count = await obtenerContadorGlobal();
-        if (count !== null) {
-            document.getElementById('contadorGlobal').textContent = count;
-        } else {
-            document.getElementById('contadorGlobal').textContent = "Error";
-        }
+        document.getElementById('contadorGlobal').textContent = count !== null ? count : "Error";
     }
 
     async function reiniciarContadorGlobal() {
@@ -344,7 +384,6 @@
         }
     }
 
-    // Incrementar contador global al cargar la página (en segundo plano)
     (async function() {
         try { await fetch(`${SCRIPT_URL}?action=visit`, { method: 'GET' }); } catch(e) {}
     })();
@@ -362,6 +401,29 @@
 
     function ocultarModal() {
         modal.style.display = 'none';
+    }
+
+    // ====== TOAST ======
+    const toast = document.getElementById('toastEnvio');
+    const textoToast = document.getElementById('textoToast');
+    let timerInterval = null;
+
+    function mostrarToast(mensaje, activo = false) {
+        textoToast.textContent = mensaje;
+        if (activo) {
+            toast.classList.add('activo');
+        } else {
+            toast.classList.remove('activo');
+        }
+        toast.classList.add('mostrar');
+    }
+
+    function ocultarToast() {
+        toast.classList.remove('mostrar', 'activo');
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
     }
 
     // ====== FORMULARIO Y PDF ======
@@ -394,16 +456,19 @@
         });
     }
 
-    // Envío en segundo plano (sin esperar respuesta)
     async function enviarCopia(pdf, nombreArchivo, empleador, trabajador, correoEmpleador, correoTrabajador, fecha) {
+        const inicio = Date.now();
+        mostrarToast('Enviando copia...', true);
+        timerInterval = setInterval(() => {
+            const transcurrido = ((Date.now() - inicio) / 1000).toFixed(1);
+            textoToast.textContent = `Enviando copia... (${transcurrido}s)`;
+        }, 200);
+
         try {
             const blobPDF = pdf.output('blob');
             const reader = new FileReader();
             const base64 = await new Promise((resolve, reject) => {
-                reader.onloadend = () => {
-                    const data = reader.result.split(',')[1];
-                    resolve(data);
-                };
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
                 reader.onerror = reject;
                 reader.readAsDataURL(blobPDF);
             });
@@ -412,23 +477,24 @@
                 body: JSON.stringify({
                     archivo: base64,
                     nombre: nombreArchivo,
-                    metadata: {
-                        trabajador, empleador, fecha,
-                        correoEmpleador, correoTrabajador
-                    }
+                    metadata: { trabajador, empleador, fecha, correoEmpleador, correoTrabajador }
                 })
             });
-            // Éxito silencioso
+            const total = ((Date.now() - inicio) / 1000).toFixed(1);
+            mostrarToast(`✅ Copia enviada en ${total}s`, false);
         } catch(e) {
-            console.error("Error enviando copia", e);
-            // No molestar al usuario
+            const total = ((Date.now() - inicio) / 1000).toFixed(1);
+            mostrarToast(`❌ Error al enviar copia (${total}s)`, false);
+        } finally {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            setTimeout(ocultarToast, 5000);
         }
     }
 
     async function generarPDF() {
         mostrarModal('Generando PDF...', true);
 
-        // Copiar datos al documento final
         const mapeo = [
             ['ciudad','p_ciudad'],['dia','p_dia'],['mes','p_mes'],['ano','p_ano'],
             ['empleador','p_empleador'],['nit','p_nit'],['rep_empleador','p_rep_empleador'],
@@ -488,14 +554,11 @@
                 ? `Acuerdo_Vacaciones_${empleador.replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_')}_${trabajador.replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_')}.pdf`
                 : `Acuerdo_Vacaciones_${trabajador || empleador || 'SinDatos'}.pdf`;
 
-            // Descargar PDF
             pdf.save(nombreArchivo);
 
-            // Limpiar formulario y cerrar modal INMEDIATAMENTE
             limpiarFormulario();
             ocultarModal();
 
-            // Enviar copia en segundo plano (sin bloquear)
             const correoEmpleador = document.getElementById('correo_empleador').value.trim();
             const correoTrabajador = document.getElementById('correo_trabajador').value.trim();
             const fecha = `${document.getElementById('dia').value}/${document.getElementById('mes').value}/${document.getElementById('ano').value}`;
@@ -506,7 +569,6 @@
             mostrarModal('❌ Error al generar el PDF.', false);
             setTimeout(ocultarModal, 2500);
         } finally {
-            // Restaurar estilos del documento final
             docFinal.style.padding = '';
             docFinal.style.fontSize = '';
             docFinal.style.lineHeight = '';
