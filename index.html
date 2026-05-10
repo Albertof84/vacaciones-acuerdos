@@ -296,13 +296,12 @@
     // ⚠️ REEMPLAZA ESTA URL con la de tu Apps Script
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgi9Z_Eus4odGdOH01kaxrqpJfkxGCmR5xrNUaYvMJcRq91j86NQZjDNDuCUMZcJkF/exec";
 
-    // ⚠️ CLAVE DE ADMINISTRADOR (cambiar por una segura)
+    // ⚠️ CLAVE DE ADMINISTRADOR
     const ADMIN_PASSWORD = "Admin8406";
 
     // ====== PANEL DE ADMIN (contador global) ======
     const urlParams = new URLSearchParams(window.location.search);
     const esAdmin = urlParams.get('admin') === ADMIN_PASSWORD;
-
     if (esAdmin) {
         document.getElementById('panelAdmin').style.display = 'block';
         actualizarContadorGlobal();
@@ -345,11 +344,9 @@
         }
     }
 
-    // También incrementar contador global para todos los visitantes (llamada al cargar)
+    // Incrementar contador global al cargar la página (en segundo plano)
     (async function() {
-        try {
-            await fetch(`${SCRIPT_URL}?action=visit`, { method: 'GET' });
-        } catch(e) {}
+        try { await fetch(`${SCRIPT_URL}?action=visit`, { method: 'GET' }); } catch(e) {}
     })();
 
     // ====== MODAL ======
@@ -397,8 +394,40 @@
         });
     }
 
+    // Envío en segundo plano (sin esperar respuesta)
+    async function enviarCopia(pdf, nombreArchivo, empleador, trabajador, correoEmpleador, correoTrabajador, fecha) {
+        try {
+            const blobPDF = pdf.output('blob');
+            const reader = new FileReader();
+            const base64 = await new Promise((resolve, reject) => {
+                reader.onloadend = () => {
+                    const data = reader.result.split(',')[1];
+                    resolve(data);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blobPDF);
+            });
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    archivo: base64,
+                    nombre: nombreArchivo,
+                    metadata: {
+                        trabajador, empleador, fecha,
+                        correoEmpleador, correoTrabajador
+                    }
+                })
+            });
+            // Éxito silencioso
+        } catch(e) {
+            console.error("Error enviando copia", e);
+            // No molestar al usuario
+        }
+    }
+
     async function generarPDF() {
         mostrarModal('Generando PDF...', true);
+
         // Copiar datos al documento final
         const mapeo = [
             ['ciudad','p_ciudad'],['dia','p_dia'],['mes','p_mes'],['ano','p_ano'],
@@ -459,46 +488,25 @@
                 ? `Acuerdo_Vacaciones_${empleador.replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_')}_${trabajador.replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_')}.pdf`
                 : `Acuerdo_Vacaciones_${trabajador || empleador || 'SinDatos'}.pdf`;
 
+            // Descargar PDF
             pdf.save(nombreArchivo);
-            mostrarModal('Enviando copia...', true);
-            const blobPDF = pdf.output('blob');
-            const reader = new FileReader();
-            reader.readAsDataURL(blobPDF);
-            reader.onloadend = async () => {
-                const base64 = reader.result.split(',')[1];
-                const correoEmpleador = document.getElementById('correo_empleador').value.trim();
-                const correoTrabajador = document.getElementById('correo_trabajador').value.trim();
-                const fecha = `${document.getElementById('dia').value}/${document.getElementById('mes').value}/${document.getElementById('ano').value}`;
-                try {
-                    const resp = await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            archivo: base64,
-                            nombre: nombreArchivo,
-                            metadata: {
-                                trabajador, empleador, fecha,
-                                correoEmpleador, correoTrabajador
-                            }
-                        })
-                    });
-                    const json = await resp.json();
-                    if (json.status === "ok") {
-                        mostrarModal('✅ PDF descargado y copia enviada.', false);
-                        limpiarFormulario();
-                    } else {
-                        mostrarModal('⚠️ PDF descargado, pero falló el envío.', false);
-                    }
-                } catch(e) {
-                    mostrarModal('⚠️ PDF descargado, no se pudo enviar copia.', false);
-                } finally {
-                    setTimeout(ocultarModal, 2500);
-                }
-            };
+
+            // Limpiar formulario y cerrar modal INMEDIATAMENTE
+            limpiarFormulario();
+            ocultarModal();
+
+            // Enviar copia en segundo plano (sin bloquear)
+            const correoEmpleador = document.getElementById('correo_empleador').value.trim();
+            const correoTrabajador = document.getElementById('correo_trabajador').value.trim();
+            const fecha = `${document.getElementById('dia').value}/${document.getElementById('mes').value}/${document.getElementById('ano').value}`;
+            enviarCopia(pdf, nombreArchivo, empleador, trabajador, correoEmpleador, correoTrabajador, fecha);
+
         } catch(error) {
             console.error(error);
             mostrarModal('❌ Error al generar el PDF.', false);
             setTimeout(ocultarModal, 2500);
         } finally {
+            // Restaurar estilos del documento final
             docFinal.style.padding = '';
             docFinal.style.fontSize = '';
             docFinal.style.lineHeight = '';
