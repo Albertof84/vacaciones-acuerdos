@@ -221,6 +221,23 @@
         .toast.activo .spinner-toast {
             display: block;
         }
+
+        /* Enlace al manual */
+        .enlace-manual {
+            text-align: center;
+            margin-top: 25px;
+        }
+        .enlace-manual a {
+            color: #1a5276;
+            text-decoration: none;
+            font-size: 0.95em;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+        .enlace-manual a:hover {
+            color: #0e3a52;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -248,7 +265,7 @@
     <div class="seccion">
         <h3>Partes</h3>
         <p><strong>EMPLEADOR:</strong> <input type="text" id="empleador" placeholder="nombre de la PYME">, con NIT: <input type="text" id="nit" size="12">, representada por <input type="text" id="rep_empleador" placeholder="nombre representante">, con CI No. <input type="text" id="ci_rep" size="12">.</p>
-        <p><strong>Correo del empleador:</strong> <input type="email" id="correo_empleador" placeholder="correo@empresa.com"></p>
+        <p><strong>Correo del empleador (obligatorio):</strong> <input type="email" id="correo_empleador" placeholder="correo@empresa.com"></p>
         <p><strong>TRABAJADOR:</strong> <input type="text" id="nombre_trabajador" placeholder="nombre trabajador">, con CI No. <input type="text" id="ci_trabajador" size="12">, que ocupa el cargo de <input type="text" id="cargo" placeholder="cargo"> en el área de <input type="text" id="area" placeholder="área">.</p>
         <p><strong>Correo del trabajador (opcional):</strong> <input type="email" id="correo_trabajador" placeholder="correo@ejemplo.com"></p>
     </div>
@@ -287,7 +304,12 @@
         <button onclick="generarPDF()">📄 Guardar PDF</button>
     </div>
 
-    <!-- PANEL DE ADMINISTRACIÓN -->
+    <!-- ENLACE AL MANUAL -->
+    <div class="enlace-manual">
+        <a href="manual.html" target="_blank">📘 ¿Necesita ayuda? Consulte el manual de uso</a>
+    </div>
+
+    <!-- PANEL DE ADMINISTRACIÓN (solo visible con ?admin=clave) -->
     <div class="admin-panel" id="panelAdmin">
         <h3>🔧 Panel de Administración</h3>
         <p>Visitas totales (global): <strong id="contadorGlobal">0</strong></p>
